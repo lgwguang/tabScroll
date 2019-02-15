@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.design.widget.TabLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -14,10 +15,13 @@ import java.util.List;
 
 public class TabScrollActivity extends AppCompatActivity {
 
+    public static final String TAG = TabScrollActivity.class.getSimpleName();
+
     private TabLayout tabLayout;
     private CustomScrollView scrollView;
     private LinearLayout container;
-    private String[] tabTxt = {"客厅", "卧室", "餐厅", "书房", "阳台", "儿童房"};
+    //private String[] tabTxt = {"客厅", "卧室", "餐厅", "书房", "阳台", "儿童房"};
+    private String[] tabTxt = {"客厅", "卧室", "餐厅"};
     //内容块view的集合
     private List<AnchorView> anchorList = new ArrayList<>();
     //判读是否是scrollview主动引起的滑动，true-是，false-否，由tablayout引起的
@@ -36,6 +40,8 @@ public class TabScrollActivity extends AppCompatActivity {
         scrollView = findViewById(R.id.scrollView);
         container = findViewById(R.id.container);
 
+
+
         //模拟数据，填充scrollview
         for (int i = 0; i < tabTxt.length; i++) {
             AnchorView anchorView = new AnchorView(this);
@@ -44,10 +50,36 @@ public class TabScrollActivity extends AppCompatActivity {
             anchorList.add(anchorView);
             container.addView(anchorView);
         }
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                //点击标签，使scrollview滑动，isScroll置false
+                isScroll = false;
+                int pos = tab.getPosition();
+                int top = anchorList.get(pos).getTop();
+                scrollView.smoothScrollTo(0, top);
+                Log.i(TAG,"onTabSelected");
+            }
 
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                Log.i(TAG,"onTabUnselected");
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                //此处用于处理首次进去后会默认选中第0个标签，再次点击不走onTabSelected
+                if(tab.getPosition()==0){
+                    int pos = tab.getPosition();
+                    int top = anchorList.get(pos).getTop();
+                    scrollView.smoothScrollTo(0, top);
+                }
+                Log.i(TAG,"onTabReselected");
+            }
+        });
         //tablayout设置标签
         for (int i = 0; i < tabTxt.length; i++) {
-            tabLayout.addTab(tabLayout.newTab().setText(tabTxt[i]));
+            tabLayout.addTab(tabLayout.newTab().setText(tabTxt[i]),i);
         }
 
         listener = new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -57,7 +89,8 @@ public class TabScrollActivity extends AppCompatActivity {
                 int statusBarH = getStatusBarHeight(TabScrollActivity.this);
                 int tabH = tabLayout.getHeight();
                 //计算内容块所在的高度，全屏高度-状态栏高度-tablayout的高度-内容container的padding 16dp
-                int lastH = screenH - statusBarH - tabH - 16 * 3;
+                //int lastH = screenH - statusBarH - tabH - 16 * 3;
+                int lastH = screenH;
                 AnchorView lastView = anchorList.get(anchorList.size() - 1);
                 //当最后一个view 高度小于内容块高度时，设置其高度撑满
                 if (lastView.getHeight() < lastH) {
@@ -66,32 +99,9 @@ public class TabScrollActivity extends AppCompatActivity {
                     lastView.setLayoutParams(params);
                 }
                 container.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
-
             }
         };
         container.getViewTreeObserver().addOnGlobalLayoutListener(listener);
-
-
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                //点击标签，使scrollview滑动，isScroll置false
-                isScroll = false;
-                int pos = tab.getPosition();
-                int top = anchorList.get(pos).getTop();
-                scrollView.smoothScrollTo(0, top);
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-
-            }
-        });
 
         scrollView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -143,5 +153,4 @@ public class TabScrollActivity extends AppCompatActivity {
         }
         return result;
     }
-
 }
